@@ -6,6 +6,7 @@ import { createSession, nextTurn } from "./orchestrator.mjs";
 import { scoreConversation } from "./feedback.mjs";
 import { scenarios } from "./scenarios.mjs";
 import { createAnalyticsStore } from "./analytics.mjs";
+import { saveSessionSnapshot, saveAttempt, getPreviousAttemptDelta, getProgressSummary } from "./store.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,11 +39,8 @@ function readBody(req) {
     let body = "";
     req.on("data", chunk => (body += chunk));
     req.on("end", () => {
-      try {
-        resolve(JSON.parse(body || "{}"));
-      } catch {
-        reject(new Error("Bad JSON"));
-      }
+      try { resolve(JSON.parse(body || "{}")); }
+      catch { reject(new Error("Bad JSON")); }
     });
   });
 }
@@ -58,11 +56,12 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "POST" && req.url === "/api/session") {
     try {
-      const { scenarioId = "restaurant" } = await readBody(req);
+      const { scenarioId = "restaurant", difficulty = "standard" } = await readBody(req);
       const id = crypto.randomUUID();
-      const session = createSession(scenarioId);
+      const session = createSession(scenarioId, difficulty);
       sessions.set(id, session);
-      analytics.track("session_started", { scenarioId });
+      saveSessionSnapshot(id, session);
+      analytics.track("session_started", { scenarioId, difficulty });
       return json(res, 200, { sessionId: id, session, openingLine: scenarios[scenarioId].openingLine });
     } catch {
       return json(res, 400, { error: "Bad request" });
@@ -76,14 +75,15 @@ const server = http.createServer(async (req, res) => {
       if (!session) return json(res, 404, { error: "Session not found" });
 
       session.history.push({ role: "user", content: text });
-      analytics.track("user_turn", { sessionId, scenarioId: session.scenarioId, stage: session.stage });
+      analytics.track("user_turn", { sessionId, scenarioId: session.scenarioId, stage: session.stage, difficulty: session.difficulty });
 
       const updated = await nextTurn(session, text);
       updated.turns.forEach(t => session.history.push(t));
       session.stage = updated.stage;
       session.completed = updated.completed;
+      saveSessionSnapshot(sessionId, session);
 
-      if (session.completed) analytics.track("scenario_completed", { sessionId, scenarioId: session.scenarioId });
+      if (session.completed) analytics.track("scenario_completed", { sessionId, scenarioId: session.scenarioId, difficulty: session.difficulty });
 
       return json(res, 200, { stage: session.stage, completed: session.completed, turns: updated.turns });
     } catch {
@@ -96,15 +96,33 @@ const server = http.createServer(async (req, res) => {
       const { sessionId } = await readBody(req);
       const session = sessions.get(sessionId);
       if (!session) return json(res, 404, { error: "Session not found" });
-      const report = scoreConversation(session.history);
-      analytics.track("feedback_generated", { sessionId, scenarioId: session.scenarioId, score: report.score });
-      return json(res, 200, report);
+
+      const report = scoreConversation(session.history, session.scenarioId);
+      saveAttempt(sessionId, session.scenarioId, report);
+      const { previousScore, delta } = getPreviousAttemptDelta(session.scenarioId);
+
+      analytics.track("feedback_generated", {
+        sessionId,
+        scenarioId: session.scenarioId,
+        score: report.score,
+        cefrBand: report.cefrBand,
+        difficulty: session.difficulty,
+        delta
+      });
+
+      return json(res, 200, {
+        ...report,
+        previousScore,
+        delta,
+        improvementLabel: delta == null ? "No baseline yet" : delta >= 0 ? `+${delta} vs previous attempt` : `${delta} vs previous attempt`
+      });
     } catch {
       return json(res, 400, { error: "Bad request" });
     }
   }
 
   if (req.method === "GET" && req.url === "/api/analytics") return json(res, 200, analytics.summary());
+  if (req.method === "GET" && req.url === "/api/progress") return json(res, 200, getProgressSummary());
 
   return json(res, 404, { error: "Route not found" });
 });

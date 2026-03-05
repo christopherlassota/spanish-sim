@@ -8,6 +8,7 @@ const feedback = document.getElementById("feedback");
 const feedbackBtn = document.getElementById("feedbackBtn");
 const analyticsBtn = document.getElementById("analyticsBtn");
 const scenarioSelect = document.getElementById("scenarioSelect");
+const difficultySelect = document.getElementById("difficultySelect");
 const newSessionBtn = document.getElementById("newSessionBtn");
 const objective = document.getElementById("objective");
 
@@ -40,14 +41,15 @@ function updateObjective() {
 async function initSession() {
   clearChat();
   const scenarioId = scenarioSelect.value;
+  const difficulty = difficultySelect.value;
   const res = await fetch("/api/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenarioId })
+    body: JSON.stringify({ scenarioId, difficulty })
   });
   const data = await res.json();
   sessionId = data.sessionId;
-  addMessage("assistant", "Scene", data.openingLine);
+  addMessage("assistant", "Scene", `${data.openingLine} [${difficulty.toUpperCase()}]`);
 }
 
 form.addEventListener("submit", async (e) => {
@@ -79,22 +81,34 @@ feedbackBtn.addEventListener("click", async () => {
   const data = await res.json();
   feedback.innerHTML = `
     <h3>Feedback</h3>
-    <p><strong>Score:</strong> ${data.score}/100</p>
+    <p><strong>Score:</strong> ${data.score}/100 (${data.cefrBand})</p>
+    <p><strong>Improvement:</strong> ${data.improvementLabel}</p>
     <p>${data.summary}</p>
+    <p><strong>Competencies</strong></p>
+    <ul>
+      <li>Task completion: ${data.competencies.taskCompletion}</li>
+      <li>Grammar accuracy: ${data.competencies.grammarAccuracy}</li>
+      <li>Vocabulary range: ${data.competencies.vocabularyRange}</li>
+      <li>Fluency/naturalness: ${data.competencies.fluencyNaturalness}</li>
+    </ul>
+    <p><strong>Retry goal</strong></p>
+    <ul>${data.retryGoals.map(g => `<li>${g}</li>`).join("")}</ul>
     <p><strong>Corrections</strong></p>
     <ul>${data.corrections.map(c => `<li>${c}</li>`).join("")}</ul>
-    <p><strong>Native-like alternatives</strong></p>
-    <ul>${data.betterPhrases.map(c => `<li>${c}</li>`).join("")}</ul>
   `;
 });
 
 analyticsBtn.addEventListener("click", async () => {
-  const res = await fetch("/api/analytics");
-  const data = await res.json();
+  const [aRes, pRes] = await Promise.all([fetch("/api/analytics"), fetch("/api/progress")]);
+  const analytics = await aRes.json();
+  const progress = await pRes.json();
   feedback.innerHTML = `
     <h3>Analytics (MVP)</h3>
-    <p><strong>Total events:</strong> ${data.totalEvents}</p>
-    <pre>${JSON.stringify(data.counts, null, 2)}</pre>
+    <p><strong>Total events:</strong> ${analytics.totalEvents}</p>
+    <pre>${JSON.stringify(analytics.counts, null, 2)}</pre>
+    <h3>Learning Progress</h3>
+    <p><strong>Total sessions:</strong> ${progress.totalSessions}</p>
+    <pre>${JSON.stringify(progress.attemptsByScenario, null, 2)}</pre>
   `;
 });
 
