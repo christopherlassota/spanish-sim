@@ -5,18 +5,39 @@ Text-first MVP for scenario-based Spanish roleplay.
 ## What this includes
 - Scenario state machine (Restaurant, Taxi, Airbnb)
 - Character personas + orchestrated turn selection
-- Optional LLM responses (`OPENAI_API_KEY`), scripted fallback if not configured
+- Optional LLM responses (`openai` or `minimax`), scripted fallback if not configured
 - Post-conversation feedback (basic heuristics)
 - Analytics events (session start, turns, completion, feedback)
 - Persistent progress store (`data/progress.json`) with retry delta tracking
-- Minimal browser UI
+- React + TypeScript frontend served by the Node app after Vite build
+
+## Install
+```bash
+npm install
+```
 
 ## Run
 ```bash
-cd apps/spanish-sim
 npm run start
 ```
-Then open: http://localhost:8787
+`npm run start` builds the frontend, then serves the app and API on `http://localhost:8787`.
+
+## Dev
+```bash
+npm run dev
+```
+This starts:
+- the Node API on `http://localhost:8787`
+- the Vite frontend on `http://localhost:5173` with `/api` proxied to the backend
+
+## Typecheck
+```bash
+npm run typecheck
+```
+
+Then open:
+- `http://localhost:5173` during frontend development
+- `http://localhost:8787` for the built app served by Node
 
 ### Dev note (common local issue)
 If you see `EADDRINUSE: 8787`, the server is already running in another session.
@@ -46,6 +67,26 @@ Set env vars before running:
 - `POST /api/feedback`
 - `GET /api/analytics`
 - `GET /api/progress`
+
+## Frontend structure
+- `client/src/App.tsx`: app shell, state, session lifecycle, panel loading
+- `client/src/api.ts`: typed browser API helpers
+- `client/src/ui-types.ts`: UI-only state types that compose shared API contracts
+- `client/src/components/Transcript.tsx`: conversation transcript rendering
+- `client/src/components/InsightPanel.tsx`: feedback and analytics presentation
+
+## Shared contracts
+- `shared/contracts.mjs`: shared runtime helpers for difficulty and payload validation
+- `shared/contracts.d.mts`: shared request/response types used by the React app and backend JSDoc imports
+
+## Backend structure
+- `src/server.mjs`: startup and top-level request dispatch only
+- `src/api-router.mjs`: API route handling
+- `src/api-validation.mjs`: request parsing and validation
+- `src/api-serializers.mjs`: response shaping for stable payloads
+- `src/session-registry.mjs`: in-memory session lookup
+- `src/static-client.mjs`: built SPA asset serving
+- `src/http-utils.mjs`: HTTP response/body helpers
 
 ## Next build targets
 1. Replace heuristic scoring with CEFR-style rubric scoring

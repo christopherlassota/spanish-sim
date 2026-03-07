@@ -1,0 +1,584 @@
+:root {
+  color-scheme: dark;
+  --bg: #08131f;
+  --bg-soft: #102338;
+  --panel: rgba(8, 21, 34, 0.86);
+  --panel-strong: rgba(10, 20, 31, 0.95);
+  --line: rgba(140, 189, 216, 0.2);
+  --line-strong: rgba(140, 189, 216, 0.36);
+  --text: #edf6f7;
+  --muted: #98b4bc;
+  --accent: #6dd3c7;
+  --accent-strong: #ff8c61;
+  --warning: #ffd166;
+  --user: rgba(255, 140, 97, 0.18);
+  --assistant: rgba(109, 211, 199, 0.14);
+  --scene: rgba(255, 209, 102, 0.15);
+  --system: rgba(152, 180, 188, 0.16);
+  --shadow: 0 28px 80px rgba(0, 0, 0, 0.36);
+  font-family: "Aptos", "Segoe UI", "Trebuchet MS", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255, 140, 97, 0.22), transparent 28%),
+    radial-gradient(circle at top right, rgba(109, 211, 199, 0.2), transparent 24%),
+    linear-gradient(160deg, #07111b 0%, #0c1827 55%, #10243b 100%);
+  color: var(--text);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: inherit;
+  color: var(--text);
+  background: transparent;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.48), transparent 90%);
+}
+
+button,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.hero-copy {
+  padding: 18px 4px 8px;
+  animation: rise-in 500ms ease;
+}
+
+.eyebrow,
+.panel-kicker {
+  margin: 0 0 10px;
+  color: var(--warning);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.card-header h2,
+.hero-status h2 {
+  margin: 0;
+  font-family: "Aptos Display", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.hero h1 {
+  max-width: 9ch;
+  font-size: clamp(2.8rem, 5vw, 5rem);
+  line-height: 0.94;
+}
+
+.hero-text {
+  max-width: 58ch;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.06), transparent 24%, transparent 76%, rgba(255, 255, 255, 0.03));
+}
+
+.hero-status,
+.control-bar,
+.stage-card,
+.insight-card {
+  animation: rise-in 560ms ease;
+}
+
+.hero-status {
+  padding: 22px;
+}
+
+.hero-status p:last-child {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.status-pill,
+.difficulty-pill,
+.source-tag,
+.band-pill,
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-pill {
+  margin-bottom: 18px;
+  padding: 8px 12px;
+  color: #07111b;
+  background: var(--warning);
+}
+
+.status-pill.live {
+  background: var(--accent);
+}
+
+.control-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+  padding: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.field select,
+.composer textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(6, 18, 29, 0.72);
+  color: var(--text);
+}
+
+.field select {
+  min-height: 52px;
+  padding: 0 14px;
+}
+
+.primary-button,
+.ghost-button {
+  min-height: 52px;
+  border-radius: 18px;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    opacity 180ms ease;
+}
+
+.primary-button {
+  align-self: end;
+  color: #08131f;
+  background: linear-gradient(135deg, var(--accent) 0%, #9ce6dd 100%);
+  font-weight: 800;
+}
+
+.ghost-button {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.primary-button:hover,
+.ghost-button:hover {
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled,
+.ghost-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+}
+
+.error-banner {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 140, 97, 0.34);
+  border-radius: 18px;
+  background: rgba(255, 140, 97, 0.12);
+  color: #ffd8ca;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.stage-card,
+.insight-card {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.card-header.compact {
+  margin-bottom: 14px;
+}
+
+.card-header h2 {
+  font-size: 1.55rem;
+}
+
+.difficulty-pill {
+  padding: 8px 12px;
+  color: #08131f;
+  text-transform: capitalize;
+}
+
+.difficulty-pill.easy {
+  background: #9ee6a7;
+}
+
+.difficulty-pill.standard {
+  background: #9fd6ff;
+}
+
+.difficulty-pill.hard {
+  background: #ffb386;
+}
+
+.transcript {
+  min-height: 420px;
+  max-height: 58vh;
+  padding-right: 6px;
+  overflow-y: auto;
+}
+
+.bubble {
+  position: relative;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  animation: rise-in 240ms ease;
+}
+
+.bubble p {
+  margin: 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.bubble.user {
+  margin-left: auto;
+  background: var(--user);
+  border-color: rgba(255, 140, 97, 0.28);
+}
+
+.bubble.assistant {
+  background: var(--assistant);
+  border-color: rgba(109, 211, 199, 0.22);
+}
+
+.bubble.scene {
+  background: var(--scene);
+  border-color: rgba(255, 209, 102, 0.25);
+}
+
+.bubble.system {
+  background: var(--system);
+  border-color: rgba(152, 180, 188, 0.24);
+}
+
+.bubble-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.source-tag {
+  padding: 4px 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.thinking {
+  opacity: 0.9;
+}
+
+.thinking-row,
+.panel-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.composer {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.composer-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.composer textarea {
+  resize: vertical;
+  min-height: 118px;
+  padding: 14px 16px;
+}
+
+.panel-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.panel-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-empty h3,
+.detail-block h3,
+.scenario-card h4 {
+  margin: 0;
+  font-family: "Aptos Display", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
+}
+
+.panel-empty p:last-child,
+.delta-copy,
+.detail-block p,
+.scenario-card p {
+  color: var(--muted);
+}
+
+.score-card,
+.stat-tile,
+.detail-block,
+.scenario-card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel-strong);
+}
+
+.score-card,
+.detail-block,
+.scenario-card {
+  padding: 16px;
+}
+
+.score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.score-row strong {
+  font-size: 3.25rem;
+  line-height: 1;
+}
+
+.band-pill {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  color: #08131f;
+  background: linear-gradient(135deg, var(--accent-strong), #ffc09f);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stats-grid.dual {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stat-tile {
+  padding: 14px;
+}
+
+.stat-tile span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.stat-tile strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.6rem;
+}
+
+.detail-block ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.metric-chip {
+  padding: 8px 10px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.scenario-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.scenario-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-error {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 140, 97, 0.34);
+  border-radius: 18px;
+  background: rgba(255, 140, 97, 0.12);
+  color: #ffd8ca;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 960px) {
+  .hero,
+  .workspace,
+  .control-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .transcript {
+    max-height: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 22px 14px 30px;
+  }
+
+  .hero h1 {
+    font-size: 2.7rem;
+  }
+
+  .stage-card,
+  .insight-card,
+  .hero-status,
+  .control-bar {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .panel-actions,
+  .stats-grid,
+  .stats-grid.dual {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+  }
+}
