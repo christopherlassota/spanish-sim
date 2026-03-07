@@ -1,93 +1,104 @@
-# Spanish Sim — Initial 10-Ticket Backlog
+# Spanish Sim - Current Backlog
 
-Use this to seed GitHub issues and project board columns (To Do / In Progress / In Review / Done).
+Use this to seed GitHub issues and the project board columns (`To Do`, `In Progress`, `In Review`, `Done`).
 
-## 1) Add lightweight auth + user identity
+## 1) API integration test suite for routes + SPA serving
+**Type:** testing
+**Goal:** protect the refactored server and frontend build flow with end-to-end request coverage.
+**Acceptance Criteria:**
+- Exercise `GET /api/scenarios`
+- Exercise `POST /api/session`, `POST /api/turn`, `POST /api/feedback`
+- Verify `GET /` serves the SPA shell and non-existent assets return the right status
+- Include regression coverage for static path-boundary behavior
+
+## 2) Add lightweight auth + user identity
 **Type:** feature
 **Goal:** isolate progress per user instead of global blended data.
 **Acceptance Criteria:**
-- Sessions/attempts persist with `userId`
+- Sessions and attempts persist with `userId`
 - API supports user-scoped progress queries
 - UI can switch/select current user in dev mode
+- Existing single-user local flow still works with a default user
 
-## 2) Per-user progress dashboard
+## 3) Per-user progress dashboard
 **Type:** feature
-**Goal:** show score + competency trend over time for current user.
+**Goal:** show score and competency trend over time for the active user.
 **Acceptance Criteria:**
 - Trend chart or table by attempt timestamp
 - Highlights weakest competency
 - Shows improvement delta over last N attempts
+- Reads from user-scoped progress data
 
-## 3) CEFR rubric calibration pass
+## 4) CEFR rubric calibration pass
 **Type:** scoring
 **Goal:** make competency scoring less heuristic and more stable.
 **Acceptance Criteria:**
 - Rubric weights documented
 - Add calibration fixtures (sample conversations)
 - Tests assert expected score bands for fixtures
+- Historical progress interpretation impact reviewed
 
-## 4) Adaptive difficulty engine v2
+## 5) Adaptive difficulty engine v2
 **Type:** feature
 **Goal:** automatically suggest difficulty changes based on performance.
 **Acceptance Criteria:**
 - Recommend up/down/hold after each attempt
 - Rules based on competency thresholds
-- UI shows recommendation + reason
+- UI shows recommendation and reason
+- Recommendation logic is test-covered
 
-## 5) Scenario content expansion pack (x3)
-**Type:** content
-**Goal:** add 3 new objective-driven scenarios.
+## 6) Backend TypeScript migration
+**Type:** tech-debt
+**Goal:** migrate server-side modules from JSDoc-typed `.mjs` to TypeScript for stronger contract safety.
 **Acceptance Criteria:**
-- New scenarios follow existing schema
-- Stage progression covered by tests
-- Feedback works without schema exceptions
+- Server entry and route modules compile under TypeScript
+- Shared contracts remain the single source of truth
+- `npm run typecheck` covers client and server code
+- Runtime behavior remains unchanged
 
-## 6) Orchestrator reliability tests
-**Type:** testing
-**Goal:** prevent stage regression and edge-case dead-ends.
-**Acceptance Criteria:**
-- Add tests for invalid/short user inputs
-- Add tests for all scenario close conditions
-- Ensure hard-mode strictness remains enforced
-
-## 7) Safety layer hardening
+## 7) Safety and fallback observability
 **Type:** safety
-**Goal:** reduce English leakage and persona drift.
+**Goal:** make LLM fallback behavior measurable and easier to debug.
 **Acceptance Criteria:**
-- Expand sanitizer patterns + fallback behavior
-- Add tests for leakage cases
-- Add logs/flags for fallback rate monitoring
+- Track fallback count by provider/scenario
+- Track sanitization rejection categories
+- Add debug-safe server logs or counters
+- Expose useful metrics in analytics or a debug endpoint
 
 ## 8) Storage migration to SQLite
 **Type:** tech-debt
 **Goal:** replace JSON file persistence for reliability and concurrency.
 **Acceptance Criteria:**
-- Tables for users/sessions/attempts/events
-- Backward migration from existing JSON data
+- Tables for users, sessions, attempts, and events
+- Backward migration path from existing JSON data
 - API behavior unchanged for consumers
+- Local dev remains simple
 
-## 9) CI pipeline for test + lint
+## 9) CI pipeline for test + typecheck + build
 **Type:** infra
 **Goal:** enforce quality gates on every PR.
 **Acceptance Criteria:**
 - GitHub Action runs `npm test`
-- PR status check required before merge
-- Failing tests block merge
+- GitHub Action runs `npm run typecheck`
+- GitHub Action runs `npm run build`
+- Failing checks block merge
 
-## 10) Developer observability + debug mode
-**Type:** infra
-**Goal:** speed troubleshooting during rapid iteration.
+## 10) Scenario content expansion pack (x3)
+**Type:** content
+**Goal:** add 3 new objective-driven scenarios.
 **Acceptance Criteria:**
-- Structured server logs by request/session
-- Toggleable debug output
-- Basic metrics endpoint includes fallback/sanitization counts
+- New scenarios follow the existing schema
+- Stage progression covered by tests
+- Feedback works without schema exceptions
+- Frontend scenario selector picks them up without special-casing
 
 ---
 
 ## Suggested Labels
-`feature`, `bug`, `scoring`, `orchestrator`, `safety`, `analytics`, `infra`, `tech-debt`, `good-first-task`, `blocked`
+`feature`, `bug`, `testing`, `scoring`, `safety`, `analytics`, `infra`, `tech-debt`, `content`, `good-first-task`, `blocked`
 
 ## Suggested Milestones
-- **M1:** Core Learning Loop Hardening
+- **M1:** Reliability + Contract Hardening
 - **M2:** User System + Progress Intelligence
-- **M3:** Reliability + CI + Storage Upgrade
+- **M3:** Scoring + Adaptation
+- **M4:** Persistence + Delivery
