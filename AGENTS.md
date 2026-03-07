@@ -149,6 +149,8 @@ npm run dev
 ```powershell
 $env:PORT=8788; npm run start
 ```
+- Avoid ternary operators in production code when a plain `if`/`else` is clearer.
+  - Prefer explicit branching for readability, especially in rendering, validation, and business logic paths.
 - Do not reintroduce legacy vanilla frontend files under `public/`; the active frontend lives under `client/`.
 - Keep commits small and atomic by feature area.
 - Prefer explicit, readable logic over clever abstractions at this stage.
