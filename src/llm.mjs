@@ -1,8 +1,30 @@
-const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
-const BASE_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
+function resolveProvider() {
+  const provider = (process.env.LLM_PROVIDER || "openai").toLowerCase();
+  return provider === "minimax" ? "minimax" : "openai";
+}
 
-function hasApiConfig() {
-  return Boolean(process.env.OPENAI_API_KEY);
+export function getLlmConfig() {
+  const provider = resolveProvider();
+
+  if (provider === "minimax") {
+    return {
+      provider,
+      model: process.env.MINIMAX_MODEL || "MiniMax-M2.5",
+      baseUrl: process.env.MINIMAX_BASE_URL || "https://api.minimax.io/v1",
+      apiKey: process.env.MINIMAX_API_KEY || ""
+    };
+  }
+
+  return {
+    provider: "openai",
+    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    baseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
+    apiKey: process.env.OPENAI_API_KEY || ""
+  };
+}
+
+export function hasApiConfig() {
+  return Boolean(getLlmConfig().apiKey);
 }
 
 function difficultyStyle(difficulty = "standard") {
@@ -13,6 +35,7 @@ function difficultyStyle(difficulty = "standard") {
 
 export async function generateCharacterReply({ scenario, stage, speakerKey, speaker, userText, history, difficulty }) {
   if (!hasApiConfig()) return null;
+  const cfg = getLlmConfig();
 
   const system = `You are roleplaying a Spanish-learning scenario.
 Return only natural Spanish dialogue for the character.
@@ -31,14 +54,14 @@ Style: ${speaker.style}`;
   const recent = history.slice(-8).map(t => `${t.role.toUpperCase()}${t.speaker ? `(${t.speaker})` : ""}: ${t.content}`).join("\n");
   const user = `Conversation so far:\n${recent}\n\nLatest learner message: ${userText}\n\nRespond as ${speakerKey}.`;
 
-  const res = await fetch(`${BASE_URL}/chat/completions`, {
+  const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      Authorization: `Bearer ${cfg.apiKey}`
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: cfg.model,
       temperature: difficulty === "hard" ? 0.85 : 0.7,
       messages: [
         { role: "system", content: system },

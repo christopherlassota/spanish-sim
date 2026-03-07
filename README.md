@@ -28,14 +28,21 @@ $env:PORT=8788; npm run start
 
 ## Optional: enable live LLM replies
 Set env vars before running:
-- `OPENAI_API_KEY`
-- optional `OPENAI_MODEL` (default: `gpt-4o-mini`)
-- optional `OPENAI_BASE_URL`
+- `LLM_PROVIDER` (`openai` or `minimax`, default `openai`)
+- OpenAI (when `LLM_PROVIDER=openai`):
+  - `OPENAI_API_KEY`
+  - optional `OPENAI_MODEL` (default: `gpt-4o-mini`)
+  - optional `OPENAI_BASE_URL`
+- MiniMax (when `LLM_PROVIDER=minimax`):
+  - `MINIMAX_API_KEY`
+  - optional `MINIMAX_MODEL` (default: `MiniMax-M2.5`)
+  - optional `MINIMAX_BASE_URL` (default: `https://api.minimax.io/v1`)
 
 ## API endpoints
 - `GET /api/scenarios`
 - `POST /api/session`
-- `POST /api/turn`
+- `POST /api/turn` -> `{ stage, completed, turns: [{ role, speaker, content, source }] }`
+  - `source` is `llm` when model output is used, or `fallback` when scripted response is used
 - `POST /api/feedback`
 - `GET /api/analytics`
 - `GET /api/progress`

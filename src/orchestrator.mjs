@@ -2,13 +2,15 @@ import { scenarios } from "./scenarios.mjs";
 import { generateCharacterReply } from "./llm.mjs";
 
 const ENGLISH_LEAK = /(\bthe\b|\band\b|\bplease\b|\bi want\b|\bcan i\b|\bwhere is\b|\bsure\b|\bhelp\b|\bwith that\b)/i;
+const META_LEAK = /(\bthe user said\b|\bwhich means\b|\bi am playing\b|\bmy character is\b|\bi should respond\b|\brespond briefly\b|\bin spanish\b|\bsystem instructions\b)/i;
 
 export function sanitizeCharacterReply(text) {
   if (!text) return null;
   const clean = String(text).trim();
   if (!clean) return null;
-  if (clean.length > 260) return clean.slice(0, 260);
+  if (META_LEAK.test(clean)) return null;
   if (ENGLISH_LEAK.test(clean)) return null;
+  if (clean.length > 260) return clean.slice(0, 260);
   return clean;
 }
 
@@ -107,10 +109,11 @@ export async function nextTurn(state, userText) {
     difficulty
   });
 
-  let content = sanitizeCharacterReply(raw);
-  if (!content) content = fallbackReply(state.scenarioId, stage, progress, difficulty);
+  const sanitized = sanitizeCharacterReply(raw);
+  const source = sanitized ? "llm" : "fallback";
+  const content = sanitized || fallbackReply(state.scenarioId, stage, progress, difficulty);
 
-  const turns = [{ role: "assistant", speaker: primarySpeakerKey, content }];
+  const turns = [{ role: "assistant", speaker: primarySpeakerKey, content, source }];
 
   if (state.scenarioId === "restaurant" && stage === "order_food" && difficulty !== "easy" && Math.random() > 0.5) {
     turns.push({ role: "assistant", speaker: "friend", content: "Pide los tacos, aquí son buenísimos." });

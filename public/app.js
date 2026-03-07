@@ -1,5 +1,6 @@
 let sessionId = null;
 let scenarios = [];
+let loadingEl = null;
 
 const chat = document.getElementById("chat");
 const form = document.getElementById("composer");
@@ -12,17 +13,35 @@ const difficultySelect = document.getElementById("difficultySelect");
 const newSessionBtn = document.getElementById("newSessionBtn");
 const objective = document.getElementById("objective");
 
-function addMessage(role, speaker, content) {
+function addMessage(role, speaker, content, source = null) {
+  const sourceLabel = source === "llm" ? " [LLM]" : source === "fallback" ? " [Fallback]" : "";
   const el = document.createElement("div");
   el.className = `msg ${role}`;
-  el.innerHTML = `<div class="meta">${speaker}</div><div>${content}</div>`;
+  el.innerHTML = `<div class="meta">${speaker}${sourceLabel}</div><div>${content}</div>`;
   chat.appendChild(el);
   chat.scrollTop = chat.scrollHeight;
+}
+
+function showLoadingIndicator() {
+  removeLoadingIndicator();
+  const el = document.createElement("div");
+  el.className = "msg assistant thinking";
+  el.innerHTML = `<div class="meta">Assistant</div><div class="thinking-row"><span class="spinner" aria-hidden="true"></span><span>Thinking...</span></div>`;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
+  loadingEl = el;
+}
+
+function removeLoadingIndicator() {
+  if (!loadingEl) return;
+  loadingEl.remove();
+  loadingEl = null;
 }
 
 function clearChat() {
   chat.innerHTML = "";
   feedback.innerHTML = "";
+  loadingEl = null;
 }
 
 async function loadScenarios() {
@@ -59,16 +78,23 @@ form.addEventListener("submit", async (e) => {
 
   addMessage("user", "You", text);
   input.value = "";
+  showLoadingIndicator();
 
-  const res = await fetch("/api/turn", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId, text })
-  });
+  try {
+    const res = await fetch("/api/turn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, text })
+    });
 
-  const data = await res.json();
-  for (const t of data.turns) addMessage("assistant", t.speaker, t.content);
-  if (data.completed) addMessage("assistant", "System", "Scenario complete. Tap ‘Get Feedback’.");
+    const data = await res.json();
+    for (const t of data.turns) addMessage("assistant", t.speaker, t.content, t.source);
+    if (data.completed) addMessage("assistant", "System", "Scenario complete. Tap 'Get Feedback'.");
+  } catch {
+    addMessage("assistant", "System", "Could not generate a response. Try again.");
+  } finally {
+    removeLoadingIndicator();
+  }
 });
 
 feedbackBtn.addEventListener("click", async () => {

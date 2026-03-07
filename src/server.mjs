@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createSession, nextTurn } from "./orchestrator.mjs";
+import { getLlmConfig, hasApiConfig } from "./llm.mjs";
 import { scoreConversation } from "./feedback.mjs";
 import { scenarios } from "./scenarios.mjs";
 import { createAnalyticsStore } from "./analytics.mjs";
@@ -130,6 +131,7 @@ const server = http.createServer(async (req, res) => {
 
 const PORT = process.env.PORT || 8787;
 server.listen(PORT, () => {
+  const llm = getLlmConfig();
   console.log(`Spanish Sim MVP running on http://localhost:${PORT}`);
-  if (!process.env.OPENAI_API_KEY) console.log("OPENAI_API_KEY not set: using fallback scripted responses.");
+  if (!hasApiConfig()) console.log(`LLM key for provider '${llm.provider}' not set: using fallback scripted responses.`);
 });
