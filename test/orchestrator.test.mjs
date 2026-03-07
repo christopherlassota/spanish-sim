@@ -34,8 +34,12 @@ test("safety layer rejects english leak", () => {
 });
 
 test("nextTurn marks source as fallback when LLM is unavailable", async () => {
+  const prevProvider = process.env.LLM_PROVIDER;
   const prevKey = process.env.OPENAI_API_KEY;
+  const prevMiniKey = process.env.MINIMAX_API_KEY;
+  process.env.LLM_PROVIDER = "openai";
   delete process.env.OPENAI_API_KEY;
+  delete process.env.MINIMAX_API_KEY;
 
   try {
     const state = {
@@ -49,15 +53,23 @@ test("nextTurn marks source as fallback when LLM is unavailable", async () => {
     const updated = await nextTurn(state, "Al aeropuerto, por favor");
     assert.equal(updated.turns[0].source, "fallback");
   } finally {
+    if (prevProvider == null) delete process.env.LLM_PROVIDER;
+    else process.env.LLM_PROVIDER = prevProvider;
     if (prevKey == null) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = prevKey;
+    if (prevMiniKey == null) delete process.env.MINIMAX_API_KEY;
+    else process.env.MINIMAX_API_KEY = prevMiniKey;
   }
 });
 
 test("nextTurn marks source as llm when model reply is accepted", async () => {
+  const prevProvider = process.env.LLM_PROVIDER;
   const prevKey = process.env.OPENAI_API_KEY;
+  const prevMiniKey = process.env.MINIMAX_API_KEY;
   const prevFetch = global.fetch;
+  process.env.LLM_PROVIDER = "openai";
   process.env.OPENAI_API_KEY = "test-key";
+  delete process.env.MINIMAX_API_KEY;
   global.fetch = async () => ({
     ok: true,
     json: async () => ({ choices: [{ message: { content: "Claro, vamos por la ruta rapida." } }] })
@@ -75,15 +87,23 @@ test("nextTurn marks source as llm when model reply is accepted", async () => {
     const updated = await nextTurn(state, "Al aeropuerto, por favor");
     assert.equal(updated.turns[0].source, "llm");
   } finally {
+    if (prevProvider == null) delete process.env.LLM_PROVIDER;
+    else process.env.LLM_PROVIDER = prevProvider;
     if (prevKey == null) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = prevKey;
+    if (prevMiniKey == null) delete process.env.MINIMAX_API_KEY;
+    else process.env.MINIMAX_API_KEY = prevMiniKey;
     global.fetch = prevFetch;
   }
 });
 
 test("nextTurn handles english/number/symbol inputs with fallback replies", async () => {
+  const prevProvider = process.env.LLM_PROVIDER;
   const prevKey = process.env.OPENAI_API_KEY;
+  const prevMiniKey = process.env.MINIMAX_API_KEY;
+  process.env.LLM_PROVIDER = "openai";
   delete process.env.OPENAI_API_KEY;
+  delete process.env.MINIMAX_API_KEY;
 
   const samples = [
     "Test",
@@ -108,7 +128,11 @@ test("nextTurn handles english/number/symbol inputs with fallback replies", asyn
       assert.ok(updated.turns[0].content.length > 0);
     }
   } finally {
+    if (prevProvider == null) delete process.env.LLM_PROVIDER;
+    else process.env.LLM_PROVIDER = prevProvider;
     if (prevKey == null) delete process.env.OPENAI_API_KEY;
     else process.env.OPENAI_API_KEY = prevKey;
+    if (prevMiniKey == null) delete process.env.MINIMAX_API_KEY;
+    else process.env.MINIMAX_API_KEY = prevMiniKey;
   }
 });

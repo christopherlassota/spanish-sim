@@ -13,16 +13,25 @@ const difficultySelect = document.getElementById("difficultySelect");
 const newSessionBtn = document.getElementById("newSessionBtn");
 const objective = document.getElementById("objective");
 
+function escapeHtml(value) {
+  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
+function renderList(items) {
+  return items.map(item => `<li>${escapeHtml(item)}</li>`).join("");
+}
+
 function addMessage(role, speaker, content, source = null) {
   const sourceLabel = source === "llm" ? " [LLM]" : source === "fallback" ? " [Fallback]" : "";
   const el = document.createElement("div");
   el.className = `msg ${role}`;
-  el.innerHTML = `<div class="meta">${speaker}${sourceLabel}</div><div>${content}</div>`;
+  el.innerHTML = `<div class="meta">${escapeHtml(speaker)}${escapeHtml(sourceLabel)}</div><div>${escapeHtml(content)}</div>`;
   chat.appendChild(el);
   chat.scrollTop = chat.scrollHeight;
 }
 
 function showLoadingIndicator() {
+  // Replace any stale spinner so repeated submits never stack placeholders in the transcript.
   removeLoadingIndicator();
   const el = document.createElement("div");
   el.className = "msg assistant thinking";
@@ -107,20 +116,20 @@ feedbackBtn.addEventListener("click", async () => {
   const data = await res.json();
   feedback.innerHTML = `
     <h3>Feedback</h3>
-    <p><strong>Score:</strong> ${data.score}/100 (${data.cefrBand})</p>
-    <p><strong>Improvement:</strong> ${data.improvementLabel}</p>
-    <p>${data.summary}</p>
+    <p><strong>Score:</strong> ${escapeHtml(data.score)}/100 (${escapeHtml(data.cefrBand)})</p>
+    <p><strong>Improvement:</strong> ${escapeHtml(data.improvementLabel)}</p>
+    <p>${escapeHtml(data.summary)}</p>
     <p><strong>Competencies</strong></p>
     <ul>
-      <li>Task completion: ${data.competencies.taskCompletion}</li>
-      <li>Grammar accuracy: ${data.competencies.grammarAccuracy}</li>
-      <li>Vocabulary range: ${data.competencies.vocabularyRange}</li>
-      <li>Fluency/naturalness: ${data.competencies.fluencyNaturalness}</li>
+      <li>Task completion: ${escapeHtml(data.competencies.taskCompletion)}</li>
+      <li>Grammar accuracy: ${escapeHtml(data.competencies.grammarAccuracy)}</li>
+      <li>Vocabulary range: ${escapeHtml(data.competencies.vocabularyRange)}</li>
+      <li>Fluency/naturalness: ${escapeHtml(data.competencies.fluencyNaturalness)}</li>
     </ul>
     <p><strong>Retry goal</strong></p>
-    <ul>${data.retryGoals.map(g => `<li>${g}</li>`).join("")}</ul>
+    <ul>${renderList(data.retryGoals)}</ul>
     <p><strong>Corrections</strong></p>
-    <ul>${data.corrections.map(c => `<li>${c}</li>`).join("")}</ul>
+    <ul>${renderList(data.corrections)}</ul>
   `;
 });
 
@@ -130,11 +139,11 @@ analyticsBtn.addEventListener("click", async () => {
   const progress = await pRes.json();
   feedback.innerHTML = `
     <h3>Analytics (MVP)</h3>
-    <p><strong>Total events:</strong> ${analytics.totalEvents}</p>
-    <pre>${JSON.stringify(analytics.counts, null, 2)}</pre>
+    <p><strong>Total events:</strong> ${escapeHtml(analytics.totalEvents)}</p>
+    <pre>${escapeHtml(JSON.stringify(analytics.counts, null, 2))}</pre>
     <h3>Learning Progress</h3>
-    <p><strong>Total sessions:</strong> ${progress.totalSessions}</p>
-    <pre>${JSON.stringify(progress.attemptsByScenario, null, 2)}</pre>
+    <p><strong>Total sessions:</strong> ${escapeHtml(progress.totalSessions)}</p>
+    <pre>${escapeHtml(JSON.stringify(progress.attemptsByScenario, null, 2))}</pre>
   `;
 });
 

@@ -4,6 +4,7 @@ function resolveProvider() {
 }
 
 export function getLlmConfig() {
+  // Normalize provider-specific env vars into one shape so callers can stay provider-agnostic.
   const provider = resolveProvider();
 
   if (provider === "minimax") {
@@ -33,6 +34,12 @@ function difficultyStyle(difficulty = "standard") {
   return "Natural clear pace, minimal slang.";
 }
 
+function stripReasoningBlocks(text) {
+  if (!text) return null;
+  const clean = String(text).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  return clean || null;
+}
+
 export async function generateCharacterReply({ scenario, stage, speakerKey, speaker, userText, history, difficulty }) {
   if (!hasApiConfig()) return null;
   const cfg = getLlmConfig();
@@ -51,26 +58,41 @@ Character: ${speaker.name}
 Tone: ${speaker.tone}
 Style: ${speaker.style}`;
 
+  // Keep prompt context bounded so the request stays cheap and focused on the current stage.
   const recent = history.slice(-8).map(t => `${t.role.toUpperCase()}${t.speaker ? `(${t.speaker})` : ""}: ${t.content}`).join("\n");
   const user = `Conversation so far:\n${recent}\n\nLatest learner message: ${userText}\n\nRespond as ${speakerKey}.`;
 
-  const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.apiKey}`
-    },
-    body: JSON.stringify({
-      model: cfg.model,
-      temperature: difficulty === "hard" ? 0.85 : 0.7,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user }
-      ]
-    })
-  });
+  const body = {
+    model: cfg.model,
+    temperature: difficulty === "hard" ? 0.85 : 0.7,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user }
+    ]
+  };
 
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content?.trim() || null;
+  if (cfg.provider === "minimax") body.reasoning_split = true;
+
+  try {
+    const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.warn(`[llm] ${cfg.provider} chat/completions failed with ${res.status}${detail ? `: ${detail.slice(0, 300)}` : ""}`);
+      return null;
+    }
+
+    const data = await res.json();
+    return stripReasoningBlocks(data?.choices?.[0]?.message?.content);
+  } catch (error) {
+    console.warn(`[llm] ${cfg.provider} request failed: ${error?.message || String(error)}`);
+    return null;
+  }
 }

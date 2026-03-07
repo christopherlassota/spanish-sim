@@ -8,6 +8,7 @@ export function sanitizeCharacterReply(text) {
   if (!text) return null;
   const clean = String(text).trim();
   if (!clean) return null;
+  // Drop prompt leakage before the broader English filter so we do not display meta narration to learners.
   if (META_LEAK.test(clean)) return null;
   if (ENGLISH_LEAK.test(clean)) return null;
   if (clean.length > 260) return clean.slice(0, 260);
@@ -109,6 +110,7 @@ export async function nextTurn(state, userText) {
     difficulty
   });
 
+  // Every assistant turn advertises whether it came from the model or the scripted fallback.
   const sanitized = sanitizeCharacterReply(raw);
   const source = sanitized ? "llm" : "fallback";
   const content = sanitized || fallbackReply(state.scenarioId, stage, progress, difficulty);
@@ -116,7 +118,7 @@ export async function nextTurn(state, userText) {
   const turns = [{ role: "assistant", speaker: primarySpeakerKey, content, source }];
 
   if (state.scenarioId === "restaurant" && stage === "order_food" && difficulty !== "easy" && Math.random() > 0.5) {
-    turns.push({ role: "assistant", speaker: "friend", content: "Pide los tacos, aquí son buenísimos." });
+    turns.push({ role: "assistant", speaker: "friend", content: "Pide los tacos, aquí son buenísimos.", source: "fallback" });
   }
 
   return {
