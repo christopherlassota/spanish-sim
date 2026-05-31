@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "start": "npm run build && node src/server.mjs",
+    "start": "npm run build && node server/server.mjs",
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:client\"",
-    "dev:server": "node --watch src/server.mjs",
+    "dev:server": "node --watch server/server.mjs",
     "dev:client": "vite --host 0.0.0.0",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test",

@@ -1,5 +1,6 @@
 export const DEFAULT_SCENARIO_ID: "restaurant";
 export const DEFAULT_DIFFICULTY: Difficulty;
+export const DEFAULT_USER_ID: "demo";
 export const DIFFICULTIES: readonly Difficulty[];
 export const MESSAGE_SOURCES: readonly MessageSource[];
 
@@ -16,6 +17,7 @@ export interface ConversationTurn {
 }
 
 export interface SessionState {
+  userId: string;
   scenarioId: string;
   difficulty: Difficulty;
   stage: string;
@@ -31,6 +33,7 @@ export interface ScenarioSummary {
 }
 
 export interface SessionRequest {
+  userId?: string;
   scenarioId?: string;
   difficulty?: Difficulty;
 }
@@ -76,10 +79,18 @@ export interface FeedbackResponse {
   competencies: Competencies;
   retryGoals: string[];
   corrections: string[];
+  betterPhrases: string[];
+  difficultyRecommendation: DifficultyRecommendation;
   summary: string;
   previousScore: number | null;
   delta: number | null;
   improvementLabel: string;
+}
+
+export interface DifficultyRecommendation {
+  action: "up" | "down" | "hold";
+  targetDifficulty: Difficulty;
+  reason: string;
 }
 
 export interface AnalyticsEvent {
@@ -91,6 +102,12 @@ export interface AnalyticsEvent {
 export interface AnalyticsSummary {
   totalEvents: number;
   counts: Record<string, number>;
+  fallbacks: {
+    total: number;
+    byProvider: Record<string, number>;
+    byScenario: Record<string, number>;
+    byReason: Record<string, number>;
+  };
   recent: AnalyticsEvent[];
 }
 
@@ -102,9 +119,26 @@ export interface ScenarioProgress {
   competencyAverages: Competencies;
 }
 
+export interface ProgressAttempt {
+  scenarioId: string;
+  score: number;
+  cefrBand: string;
+  at: string;
+  competencies: Competencies;
+}
+
+export interface WeakestCompetency {
+  key: keyof Competencies;
+  score: number;
+}
+
 export interface ProgressSummary {
+  userId: string;
   totalSessions: number;
   attemptsByScenario: Record<string, ScenarioProgress>;
+  recentAttempts: ProgressAttempt[];
+  weakestCompetency: WeakestCompetency | null;
+  recentDelta: number | null;
 }
 
 export interface ApiError {
@@ -113,6 +147,7 @@ export interface ApiError {
 
 export function isDifficulty(value: unknown): value is Difficulty;
 export function normalizeDifficulty(value: unknown): Difficulty;
+export function normalizeUserId(value: unknown): string;
 export function isMessageSource(value: unknown): value is MessageSource;
 export function isRecord(value: unknown): value is Record<string, unknown>;
 export function isNonEmptyString(value: unknown): value is string;

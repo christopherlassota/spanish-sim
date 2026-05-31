@@ -8,8 +8,9 @@ Text-first MVP for scenario-based Spanish roleplay.
 - Optional LLM responses (`openai` or `minimax`), scripted fallback if not configured
 - Post-conversation feedback (basic heuristics)
 - Analytics events (session start, turns, completion, feedback)
-- Persistent progress store (`data/progress.json`) with retry delta tracking
-- React + TypeScript frontend served by the Node app after Vite build
+- Persistent user-scoped progress store (`data/progress.json`) with retry delta tracking
+- Separate `client/` React + TypeScript frontend and `server/` Node API
+- Built frontend assets are served by the Node app after Vite build
 
 ## Install
 ```bash
@@ -30,10 +31,19 @@ This starts:
 - the Node API on `http://localhost:8787`
 - the Vite frontend on `http://localhost:5173` with `/api` proxied to the backend
 
+Run them separately with:
+```bash
+npm run dev:server
+npm run dev:client
+```
+
 ## Typecheck
 ```bash
 npm run typecheck
 ```
+
+## CI
+Pull requests and pushes to `main` run `npm test`, `npm run typecheck`, and `npm run build` in GitHub Actions.
 
 Then open:
 - `http://localhost:5173` during frontend development
@@ -61,12 +71,16 @@ Set env vars before running:
 
 ## API endpoints
 - `GET /api/scenarios`
-- `POST /api/session`
+- `POST /api/session` body: `{ userId?, scenarioId?, difficulty? }`
 - `POST /api/turn` -> `{ stage, completed, turns: [{ role, speaker, content, source }] }`
   - `source` is `llm` when model output is used, or `fallback` when scripted response is used
-- `POST /api/feedback`
+- `POST /api/feedback` -> score, CEFR band, competency subscores, retry goals, corrections, better phrases, adaptive difficulty recommendation, and previous-attempt delta
+  - feedback is available after the scenario is complete and is saved once per session
 - `GET /api/analytics`
-- `GET /api/progress`
+  - includes event counts plus fallback totals by provider, scenario, and rejection reason
+- `GET /api/progress?userId=demo`
+  - `userId` defaults to `demo` for the local single-user flow
+  - response includes scenario summaries, recent attempt trend data, weakest competency, and recent score delta
 
 ## Frontend structure
 - `client/src/App.tsx`: app shell, state, session lifecycle, panel loading
@@ -80,15 +94,15 @@ Set env vars before running:
 - `shared/contracts.d.mts`: shared request/response types used by the React app and backend JSDoc imports
 
 ## Backend structure
-- `src/server.mjs`: startup and top-level request dispatch only
-- `src/api-router.mjs`: API route handling
-- `src/api-validation.mjs`: request parsing and validation
-- `src/api-serializers.mjs`: response shaping for stable payloads
-- `src/session-registry.mjs`: in-memory session lookup
-- `src/static-client.mjs`: built SPA asset serving
-- `src/http-utils.mjs`: HTTP response/body helpers
+- `server/server.mjs`: startup and top-level request dispatch only
+- `server/api-router.mjs`: API route handling
+- `server/api-validation.mjs`: request parsing and validation
+- `server/api-serializers.mjs`: response shaping for stable payloads
+- `server/session-registry.mjs`: in-memory session lookup
+- `server/static-client.mjs`: built SPA asset serving
+- `server/http-utils.mjs`: HTTP response/body helpers
 
 ## Next build targets
 1. Replace heuristic scoring with CEFR-style rubric scoring
-2. Add user accounts and per-user progress baselines
+2. Expand the dev user selector into production-grade identity
 3. Add speech input/output once retention signal is validated

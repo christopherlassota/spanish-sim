@@ -56,6 +56,13 @@ Tracks key product/engineering decisions so future changes stay intentional.
 
 ---
 
+## 2026-05-31 - CEFR rubric calibration baseline
+**Decision:** Keep composite score weights explicit at task completion 35%, grammar accuracy 25%, vocabulary range 20%, and fluency/naturalness 20%, with CEFR thresholds at A2 55, B1 70, and B2 85.
+**Why:** The first calibration fixtures should stabilize score interpretation before adding model-based grading.
+**Implication:** Historical scores remain broadly comparable because the total weighting and CEFR thresholds stayed the same; vocabulary scoring is now scenario-specific, so strong attempts may score slightly higher when they use varied in-scenario language.
+
+---
+
 ## Template for future entries
 
 ## YYYY-MM-DD — <decision title>

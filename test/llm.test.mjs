@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generateCharacterReply, getLlmConfig, hasApiConfig } from "../src/llm.mjs";
-import { scenarios } from "../src/scenarios.mjs";
+import { generateCharacterReply, getLlmConfig, hasApiConfig } from "../server/llm.mjs";
+import { scenarios } from "../server/scenarios.mjs";
 
 function withEnv(vars, fn) {
   const prev = {};

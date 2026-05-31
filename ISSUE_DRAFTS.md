@@ -29,11 +29,11 @@ The project recently moved to a React/Vite frontend plus a modularized backend. 
 - [ ] Existing unit tests still pass
 
 ## Implementation Notes
-- `src/server.mjs`: use the live server entry for smoke-level coverage where practical
-- `src/api-router.mjs`: validate route orchestration assumptions
-- `src/api-validation.mjs`: confirm request parsing behavior through live requests
-- `src/api-serializers.mjs`: confirm response shape through live requests
-- `src/static-client.mjs`: verify built asset and fallback routing behavior
+- `server/server.mjs`: use the live server entry for smoke-level coverage where practical
+- `server/api-router.mjs`: validate route orchestration assumptions
+- `server/api-validation.mjs`: confirm request parsing behavior through live requests
+- `server/api-serializers.mjs`: confirm response shape through live requests
+- `server/static-client.mjs`: verify built asset and fallback routing behavior
 - `test/*`: add integration coverage without weakening existing unit tests
 
 ## Test Plan
@@ -75,9 +75,9 @@ Current progress is stored globally. This blocks meaningful analytics and makes 
 
 ## Implementation Notes
 - `shared/contracts.*`: update request and response contracts first if payloads change
-- `src/store.mjs`: extend schema and read/write helpers
-- `src/api-router.mjs`: apply user scoping at the API layer
-- `src/session-registry.mjs`: ensure session identity and user identity stay aligned
+- `server/store.mjs`: extend schema and read/write helpers
+- `server/api-router.mjs`: apply user scoping at the API layer
+- `server/session-registry.mjs`: ensure session identity and user identity stay aligned
 - `client/src/App.tsx`: add active-user state
 - `client/src/api.ts`: pass user context where required
 - `test/*`: add tests for user isolation
@@ -120,8 +120,8 @@ We currently show summaries and analytics, but not a focused longitudinal view f
 
 ## Implementation Notes
 - `shared/contracts.*`: add contract types if progress payload shape expands
-- `src/store.mjs`: add user-scoped trend query helper
-- `src/api-router.mjs`: add endpoint or extend `/api/progress`
+- `server/store.mjs`: add user-scoped trend query helper
+- `server/api-router.mjs`: add endpoint or extend `/api/progress`
 - `client/src/App.tsx`: add panel state for the view
 - `client/src/components/InsightPanel.tsx`: render trend UI
 
@@ -162,7 +162,7 @@ Current rubric is a strong starting point but still heuristic-heavy. Calibration
 - [ ] Rubric decisions documented in `DECISIONS.md`
 
 ## Implementation Notes
-- `src/feedback.mjs`: adjust scoring or threshold logic
+- `server/feedback.mjs`: adjust scoring or threshold logic
 - `test/feedback.test.mjs`: add fixture assertions
 - `test/fixtures/*`: add sample conversations if needed
 - `DECISIONS.md`: record any rubric direction changes

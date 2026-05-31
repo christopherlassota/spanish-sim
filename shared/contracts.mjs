@@ -1,5 +1,6 @@
 export const DEFAULT_SCENARIO_ID = "restaurant";
 export const DEFAULT_DIFFICULTY = "standard";
+export const DEFAULT_USER_ID = "demo";
 export const DIFFICULTIES = ["easy", "standard", "hard"];
 export const MESSAGE_SOURCES = ["llm", "fallback"];
 
@@ -9,6 +10,11 @@ export function isDifficulty(value) {
 
 export function normalizeDifficulty(value) {
   return isDifficulty(value) ? value : DEFAULT_DIFFICULTY;
+}
+
+export function normalizeUserId(value) {
+  if (!isNonEmptyString(value)) return DEFAULT_USER_ID;
+  return value.trim();
 }
 
 export function isMessageSource(value) {

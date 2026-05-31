@@ -1,18 +1,23 @@
 import { scenarios } from "./scenarios.mjs";
 import { generateCharacterReply } from "./llm.mjs";
+import { DEFAULT_USER_ID, normalizeUserId } from "../shared/contracts.mjs";
 
 const ENGLISH_LEAK = /(\bthe\b|\band\b|\bplease\b|\bi want\b|\bcan i\b|\bwhere is\b|\bsure\b|\bhelp\b|\bwith that\b)/i;
 const META_LEAK = /(\bthe user said\b|\bwhich means\b|\bi am playing\b|\bmy character is\b|\bi should respond\b|\brespond briefly\b|\bin spanish\b|\bsystem instructions\b)/i;
 
 export function sanitizeCharacterReply(text) {
-  if (!text) return null;
+  return inspectCharacterReply(text).content;
+}
+
+export function inspectCharacterReply(text) {
+  if (!text) return { content: null, rejectionReason: "empty" };
   const clean = String(text).trim();
-  if (!clean) return null;
+  if (!clean) return { content: null, rejectionReason: "empty" };
   // Drop prompt leakage before the broader English filter so we do not display meta narration to learners.
-  if (META_LEAK.test(clean)) return null;
-  if (ENGLISH_LEAK.test(clean)) return null;
-  if (clean.length > 260) return clean.slice(0, 260);
-  return clean;
+  if (META_LEAK.test(clean)) return { content: null, rejectionReason: "meta_leak" };
+  if (ENGLISH_LEAK.test(clean)) return { content: null, rejectionReason: "english_leak" };
+  if (clean.length > 260) return { content: clean.slice(0, 260), rejectionReason: null };
+  return { content: clean, rejectionReason: null };
 }
 
 export function detectProgress(scenarioId, text, difficulty = "standard") {
@@ -83,7 +88,15 @@ export function advanceStage(currentStage, scenarioId, progress) {
   const idx = path.indexOf(currentStage);
   if (idx < 0 || idx >= path.length - 1) return currentStage;
 
-  if (currentStage === "greeting") return path[idx + 1];
+  if (currentStage === "greeting") {
+    const firstObjectiveStage = path[idx + 1];
+    if ((firstObjectiveStage === "order_drink" || firstObjectiveStage === "destination" || firstObjectiveStage === "checkin") && progress.p1) {
+      return path[idx + 2] || firstObjectiveStage;
+    }
+
+    return firstObjectiveStage;
+  }
+
   if ((currentStage === "order_drink" || currentStage === "destination" || currentStage === "checkin") && progress.p1) return path[idx + 1];
   if ((currentStage === "order_food" || currentStage === "route" || currentStage === "questions") && progress.p2) return path[idx + 1];
   if ((currentStage === "ask_bill" || currentStage === "payment" || currentStage === "issue") && progress.p3) return path[idx + 1];
@@ -111,27 +124,30 @@ export async function nextTurn(state, userText) {
   });
 
   // Every assistant turn advertises whether it came from the model or the scripted fallback.
-  const sanitized = sanitizeCharacterReply(raw);
-  const source = sanitized ? "llm" : "fallback";
-  const content = sanitized || fallbackReply(state.scenarioId, stage, progress, difficulty);
+  const inspected = inspectCharacterReply(raw);
+  const source = inspected.content ? "llm" : "fallback";
+  const content = inspected.content || fallbackReply(state.scenarioId, stage, progress, difficulty);
+  const fallbackReason = inspected.content ? null : inspected.rejectionReason;
 
-  const turns = [{ role: "assistant", speaker: primarySpeakerKey, content, source }];
+  const turns = [{ role: "assistant", speaker: primarySpeakerKey, content, source, fallbackReason }];
 
   if (state.scenarioId === "restaurant" && stage === "order_food" && difficulty !== "easy" && Math.random() > 0.5) {
-    turns.push({ role: "assistant", speaker: "friend", content: "Pide los tacos, aquí son buenísimos.", source: "fallback" });
+    turns.push({ role: "assistant", speaker: "friend", content: "Pide los tacos, aquí son buenísimos.", source: "fallback", fallbackReason: "scripted_companion" });
   }
 
   return {
     ...state,
     stage,
     completed: stage === "close",
+    fallbackReason,
     turns
   };
 }
 
-export function createSession(scenarioId = "restaurant", difficulty = "standard") {
+export function createSession(scenarioId = "restaurant", difficulty = "standard", userId = DEFAULT_USER_ID) {
   if (!scenarios[scenarioId]) throw new Error("Unknown scenario");
   return {
+    userId: normalizeUserId(userId),
     scenarioId,
     difficulty,
     stage: "greeting",

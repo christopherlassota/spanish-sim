@@ -2,10 +2,15 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { createSession, fetchAnalyticsBundle, fetchFeedback, fetchScenarios, sendTurn } from "./api";
 import { InsightPanel } from "./components/InsightPanel";
 import { Transcript } from "./components/Transcript";
-import type { Difficulty, ScenarioSummary, Turn } from "../../shared/contracts.mjs";
+import { DEFAULT_USER_ID, type Difficulty, type ScenarioSummary, type Turn } from "../../shared/contracts.mjs";
 import type { ChatMessage, InsightPanel as InsightPanelState } from "./ui-types";
 
 const INITIAL_DIFFICULTY: Difficulty = "standard";
+const DEV_USERS = [
+  { id: DEFAULT_USER_ID, label: "Demo" },
+  { id: "ana", label: "Ana" },
+  { id: "chris", label: "Chris" }
+];
 
 function makeMessage(
   speaker: string,
@@ -35,7 +40,9 @@ export default function App() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [selectedScenarioId, setSelectedScenarioId] = useState("");
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(INITIAL_DIFFICULTY);
+  const [activeUserId, setActiveUserId] = useState<string>(DEFAULT_USER_ID);
   const [sessionId, setSessionId] = useState("");
+  const [sessionCompleted, setSessionCompleted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [isBooting, setIsBooting] = useState(true);
@@ -67,7 +74,7 @@ export default function App() {
 
         const firstScenarioId = nextScenarios[0].id;
         setSelectedScenarioId(firstScenarioId);
-        await handleStartSession(firstScenarioId, INITIAL_DIFFICULTY);
+        await handleStartSession(firstScenarioId, INITIAL_DIFFICULTY, activeUserId);
       } catch (issue) {
         setError(issue instanceof Error ? issue.message : "Could not load the simulator.");
       } finally {
@@ -80,7 +87,8 @@ export default function App() {
 
   async function handleStartSession(
     scenarioId = selectedScenarioId || selectedScenario?.id || "",
-    difficulty = selectedDifficulty
+    difficulty = selectedDifficulty,
+    userId = activeUserId
   ) {
     if (!scenarioId) return;
 
@@ -89,8 +97,9 @@ export default function App() {
     setPanel({ kind: "empty" });
 
     try {
-      const session = await createSession({ scenarioId, difficulty });
+      const session = await createSession({ userId, scenarioId, difficulty });
       setSessionId(session.sessionId);
+      setSessionCompleted(session.session.completed);
       setMessages([
         makeMessage("Scene", `${session.openingLine} [${difficulty.toUpperCase()}]`, {
           variant: "scene"
@@ -107,7 +116,7 @@ export default function App() {
   async function handleSubmitTurn(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
 
-    if (!draft.trim() || !sessionId || isSendingTurn) return;
+    if (!draft.trim() || !sessionId || sessionCompleted || isSendingTurn) return;
 
     const text = draft.trim();
     setDraft("");
@@ -117,6 +126,7 @@ export default function App() {
 
     try {
       const response = await sendTurn({ sessionId, text });
+      setSessionCompleted(response.completed);
       setMessages(current => {
         const next = [...current, ...mapTurns(response.turns)];
         if (response.completed) {
@@ -166,7 +176,7 @@ export default function App() {
     setError(null);
 
     try {
-      const analytics = await fetchAnalyticsBundle();
+      const analytics = await fetchAnalyticsBundle(activeUserId);
       setPanel({ kind: "analytics", data: analytics });
     } catch (issue) {
       setPanel({
@@ -184,27 +194,45 @@ export default function App() {
     void handleSubmitTurn();
   }
 
+  function handleActiveUserChange(userId: string) {
+    setActiveUserId(userId);
+    void handleStartSession(selectedScenarioId, selectedDifficulty, userId);
+  }
+
   return (
     <div className="app-shell">
-      <header className="hero">
-        <div className="hero-copy">
+      <header className="app-header">
+        <div className="brand-lockup">
           <p className="eyebrow">Conversation performance trainer</p>
           <h1>Spanish Conversation Gym</h1>
-          <p className="hero-text">
-            Scenario reps for restaurant, taxi, and Airbnb flows with live roleplay, scoring, and local progress
-            tracking.
-          </p>
         </div>
 
-        <div className="hero-status card">
+        <div className="objective-strip">
           <span className={`status-pill ${sessionId ? "live" : "idle"}`}>{sessionId ? "Session live" : "Connecting"}</span>
-          <p className="panel-kicker">Active objective</p>
-          <h2>{selectedScenario?.title ?? "Loading scenarios"}</h2>
-          <p>{selectedScenario?.objective ?? "Fetching scenario data..."}</p>
+          <div className="objective-copy">
+            <p className="panel-kicker">Active objective</p>
+            <strong>{selectedScenario?.title ?? "Loading scenarios"}</strong>
+            <span>{selectedScenario?.objective ?? "Fetching scenario data..."}</span>
+          </div>
         </div>
       </header>
 
       <section className="control-bar card">
+        <label className="field">
+          <span>User</span>
+          <select
+            value={activeUserId}
+            onChange={event => handleActiveUserChange(event.target.value)}
+            disabled={isBooting || isStartingSession}
+          >
+            {DEV_USERS.map(user => (
+              <option key={user.id} value={user.id}>
+                {user.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label className="field">
           <span>Scenario</span>
           <select
@@ -236,7 +264,7 @@ export default function App() {
         <button
           type="button"
           className="primary-button"
-          onClick={() => void handleStartSession(selectedScenarioId, selectedDifficulty)}
+          onClick={() => void handleStartSession(selectedScenarioId, selectedDifficulty, activeUserId)}
           disabled={!selectedScenarioId || isBooting || isStartingSession}
         >
           {isStartingSession ? "Resetting..." : "New Session"}
@@ -267,10 +295,12 @@ export default function App() {
               onChange={event => setDraft(event.target.value)}
               onKeyDown={handleComposerKeyDown}
               placeholder="Type in Spanish..."
+              lang="es"
+              spellCheck={true}
               rows={3}
-              disabled={!sessionId || isStartingSession}
+              disabled={!sessionId || sessionCompleted || isStartingSession}
             />
-            <button type="submit" className="primary-button" disabled={!sessionId || !draft.trim() || isSendingTurn}>
+            <button type="submit" className="primary-button" disabled={!sessionId || sessionCompleted || !draft.trim() || isSendingTurn}>
               {isSendingTurn ? "Sending..." : "Send"}
             </button>
           </form>
@@ -289,7 +319,7 @@ export default function App() {
             isLoading={isPanelLoading}
             onLoadFeedback={() => void handleLoadFeedback()}
             onLoadAnalytics={() => void handleLoadAnalytics()}
-            hasSession={Boolean(sessionId)}
+            canLoadFeedback={Boolean(sessionId) && sessionCompleted}
           />
         </aside>
       </main>

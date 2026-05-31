@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
-import { isPathInsideDir } from "../src/static-client.mjs";
+import { isPathInsideDir } from "../server/static-client.mjs";
 
 test("isPathInsideDir accepts files inside the client directory", () => {
   assert.equal(

@@ -11,34 +11,35 @@ Primary outcome: learners improve real-world speaking performance in scenario si
 - Modes: text-first, difficulty (`easy|standard|hard`)
 - Engine: single orchestrator with character-role simulation
 - Feedback: CEFR-style score + competency subscores + retry goal
-- Persistence: local JSON store (`data/progress.json`)
+- Persistence: local JSON store (`data/progress.json`) with user-scoped sessions and attempts
 - Analytics: local event counters + progress summaries
-- Frontend: React + TypeScript app built with Vite and served by the Node app
+- Frontend: React + TypeScript app in `client/`, built with Vite and served by the Node app
+- Backend: Node API in `server/`
 - Contracts: shared request/response types in `shared/contracts.*`
 
 ## 3) Architecture Boundaries
-- `src/orchestrator.mjs`
+- `server/orchestrator.mjs`
   - Owns stage progression, turn generation, safety fallback logic
   - Do NOT add scoring logic here
-- `src/feedback.mjs`
+- `server/feedback.mjs`
   - Owns scoring rubric, CEFR mapping, corrections/retry goals
   - Do NOT mutate session state here
-- `src/store.mjs`
+- `server/store.mjs`
   - Owns persistence (session snapshots, attempts, progress summaries)
   - Keep schema migrations backward-compatible when possible
-- `src/api-router.mjs`
+- `server/api-router.mjs`
   - Owns API route orchestration only
   - Prefer delegating validation and response shaping to dedicated modules
-- `src/api-validation.mjs`
+- `server/api-validation.mjs`
   - Owns request parsing and validation
   - Keep endpoint inputs strict and explicit
-- `src/api-serializers.mjs`
+- `server/api-serializers.mjs`
   - Owns stable API response composition
   - When changing response shapes, update shared contracts, frontend, and README in the same change
-- `src/server.mjs`
+- `server/server.mjs`
   - Owns startup and top-level request dispatch only
   - Do not let this grow back into a monolith
-- `src/static-client.mjs`
+- `server/static-client.mjs`
   - Owns built SPA asset serving
   - Keep path-boundary checks strict
 - `client/src/App.tsx`
@@ -55,11 +56,11 @@ Primary outcome: learners improve real-world speaking performance in scenario si
 
 ## 4) API Contracts (keep stable)
 - `GET /api/scenarios`
-- `POST /api/session` body: `{ scenarioId?, difficulty? }`
+- `POST /api/session` body: `{ userId?, scenarioId?, difficulty? }`
 - `POST /api/turn` body: `{ sessionId, text }`
 - `POST /api/feedback` body: `{ sessionId }`
 - `GET /api/analytics`
-- `GET /api/progress`
+- `GET /api/progress?userId=demo`
 
 Rules:
 - Keep endpoint names stable.

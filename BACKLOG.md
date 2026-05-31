@@ -4,6 +4,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 1) API integration test suite for routes + SPA serving
 **Type:** testing
+**Status:** Done
 **Goal:** protect the refactored server and frontend build flow with end-to-end request coverage.
 **Acceptance Criteria:**
 - Exercise `GET /api/scenarios`
@@ -13,6 +14,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 2) Add lightweight auth + user identity
 **Type:** feature
+**Status:** Done
 **Goal:** isolate progress per user instead of global blended data.
 **Acceptance Criteria:**
 - Sessions and attempts persist with `userId`
@@ -22,6 +24,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 3) Per-user progress dashboard
 **Type:** feature
+**Status:** Done
 **Goal:** show score and competency trend over time for the active user.
 **Acceptance Criteria:**
 - Trend chart or table by attempt timestamp
@@ -31,6 +34,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 4) CEFR rubric calibration pass
 **Type:** scoring
+**Status:** Done
 **Goal:** make competency scoring less heuristic and more stable.
 **Acceptance Criteria:**
 - Rubric weights documented
@@ -40,6 +44,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 5) Adaptive difficulty engine v2
 **Type:** feature
+**Status:** Done
 **Goal:** automatically suggest difficulty changes based on performance.
 **Acceptance Criteria:**
 - Recommend up/down/hold after each attempt
@@ -58,6 +63,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 7) Safety and fallback observability
 **Type:** safety
+**Status:** Done
 **Goal:** make LLM fallback behavior measurable and easier to debug.
 **Acceptance Criteria:**
 - Track fallback count by provider/scenario
@@ -76,6 +82,7 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 
 ## 9) CI pipeline for test + typecheck + build
 **Type:** infra
+**Status:** Done
 **Goal:** enforce quality gates on every PR.
 **Acceptance Criteria:**
 - GitHub Action runs `npm test`
@@ -102,3 +109,10 @@ Use this to seed GitHub issues and the project board columns (`To Do`, `In Progr
 - **M2:** User System + Progress Intelligence
 - **M3:** Scoring + Adaptation
 - **M4:** Persistence + Delivery
+
+the simulation doesnt know when to end - create end points, full fill objectives. Guide the user.
+underlines in red even though in spanish
+
+Done:
+- Server rejects extra turns after scenario completion and only enables feedback after completion.
+- The Spanish input uses Spanish language spellcheck context.

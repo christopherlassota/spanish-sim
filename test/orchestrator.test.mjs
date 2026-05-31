@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { detectProgress, advanceStage, sanitizeCharacterReply, nextTurn } from "../src/orchestrator.mjs";
+import { detectProgress, advanceStage, inspectCharacterReply, sanitizeCharacterReply, nextTurn } from "../server/orchestrator.mjs";
 
 test("restaurant progression advances correctly", () => {
   let stage = "greeting";
@@ -17,6 +17,11 @@ test("restaurant progression advances correctly", () => {
   assert.equal(stage, "close");
 });
 
+test("first objective can advance from the displayed greeting prompt", () => {
+  const stage = advanceStage("greeting", "restaurant", detectProgress("restaurant", "agua por favor"));
+  assert.equal(stage, "order_food");
+});
+
 test("hard difficulty is stricter on progress", () => {
   const easy = detectProgress("taxi", "ruta", "standard");
   const hard = detectProgress("taxi", "ruta", "hard");
@@ -31,6 +36,9 @@ test("safety layer rejects english leak", () => {
   assert.equal(Boolean(safe), true);
   assert.equal(leak, null);
   assert.equal(metaLeak, null);
+  assert.equal(inspectCharacterReply(leak).rejectionReason, "empty");
+  assert.equal(inspectCharacterReply("Sure, I can help with that.").rejectionReason, "english_leak");
+  assert.equal(inspectCharacterReply('The user said "Hola" which means "Hello" in Spanish.').rejectionReason, "meta_leak");
 });
 
 test("nextTurn marks source as fallback when LLM is unavailable", async () => {

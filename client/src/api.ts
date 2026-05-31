@@ -25,7 +25,7 @@ export async function fetchScenarios(): Promise<ScenarioSummary[]> {
   return data.scenarios;
 }
 
-export async function createSession(input: { scenarioId: string; difficulty: Difficulty }): Promise<SessionResponse> {
+export async function createSession(input: { userId: string; scenarioId: string; difficulty: Difficulty }): Promise<SessionResponse> {
   return requestJson<SessionResponse>("/api/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -49,10 +49,11 @@ export async function fetchFeedback(sessionId: string): Promise<FeedbackResponse
   });
 }
 
-export async function fetchAnalyticsBundle(): Promise<{ analytics: AnalyticsSummary; progress: ProgressSummary }> {
+export async function fetchAnalyticsBundle(userId: string): Promise<{ analytics: AnalyticsSummary; progress: ProgressSummary }> {
+  const progressParams = new URLSearchParams({ userId });
   const [analytics, progress] = await Promise.all([
     requestJson<AnalyticsSummary>("/api/analytics"),
-    requestJson<ProgressSummary>("/api/progress")
+    requestJson<ProgressSummary>(`/api/progress?${progressParams.toString()}`)
   ]);
 
   return { analytics, progress };

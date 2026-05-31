@@ -6,7 +6,7 @@ interface InsightPanelProps {
   isLoading: boolean;
   onLoadFeedback: () => void;
   onLoadAnalytics: () => void;
-  hasSession: boolean;
+  canLoadFeedback: boolean;
 }
 
 const COMPETENCY_LABELS: Array<{ key: Extract<keyof Competencies, string>; label: string }> = [
@@ -15,6 +15,20 @@ const COMPETENCY_LABELS: Array<{ key: Extract<keyof Competencies, string>; label
   { key: "vocabularyRange", label: "Vocabulary range" },
   { key: "fluencyNaturalness", label: "Fluency and naturalness" }
 ];
+
+function getCompetencyLabel(key: string): string {
+  return COMPETENCY_LABELS.find(item => item.key === key)?.label ?? key;
+}
+
+function formatAttemptDate(value: string): string {
+  if (!value) return "Unknown time";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
 
 function EmptyState() {
   return (
@@ -42,6 +56,11 @@ function FeedbackView({ panel }: { panel: Extract<InsightPanelState, { kind: "fe
         <p className="band-pill">{data.cefrBand}</p>
         <p>{data.summary}</p>
         <p className="delta-copy">{data.improvementLabel}</p>
+        <div className="recommendation-box">
+          <span>Next difficulty: {data.difficultyRecommendation.targetDifficulty}</span>
+          <strong>{data.difficultyRecommendation.action}</strong>
+          <p>{data.difficultyRecommendation.reason}</p>
+        </div>
       </div>
 
       <div className="stats-grid">
@@ -73,6 +92,15 @@ function FeedbackView({ panel }: { panel: Extract<InsightPanelState, { kind: "fe
           ))}
         </ul>
       </section>
+
+      <section className="detail-block">
+        <h3>Better phrases</h3>
+        <ul>
+          {data.betterPhrases.map(phrase => (
+            <li key={phrase}>{phrase}</li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
@@ -80,10 +108,12 @@ function FeedbackView({ panel }: { panel: Extract<InsightPanelState, { kind: "fe
 function AnalyticsView({ panel }: { panel: Extract<InsightPanelState, { kind: "analytics" }> }) {
   const { analytics, progress } = panel.data;
   const scenarioEntries = Object.entries(progress.attemptsByScenario);
+  const weakestLabel = progress.weakestCompetency ? getCompetencyLabel(progress.weakestCompetency.key) : "No attempts yet";
+  const deltaLabel = progress.recentDelta == null ? "No baseline" : progress.recentDelta >= 0 ? `+${progress.recentDelta}` : String(progress.recentDelta);
 
   return (
     <div className="panel-stack">
-      <div className="stats-grid dual">
+      <div className="stats-grid">
         <div className="stat-tile">
           <span>Total events</span>
           <strong>{analytics.totalEvents}</strong>
@@ -92,7 +122,23 @@ function AnalyticsView({ panel }: { panel: Extract<InsightPanelState, { kind: "a
           <span>Total sessions</span>
           <strong>{progress.totalSessions}</strong>
         </div>
+        <div className="stat-tile">
+          <span>Active user</span>
+          <strong>{progress.userId}</strong>
+        </div>
+        <div className="stat-tile">
+          <span>Recent delta</span>
+          <strong>{deltaLabel}</strong>
+        </div>
       </div>
+
+      <section className="detail-block">
+        <h3>Progress focus</h3>
+        <p>
+          Weakest competency: {weakestLabel}
+          {progress.weakestCompetency ? ` (${progress.weakestCompetency.score})` : ""}
+        </p>
+      </section>
 
       <section className="detail-block">
         <h3>Event counts</h3>
@@ -103,6 +149,42 @@ function AnalyticsView({ panel }: { panel: Extract<InsightPanelState, { kind: "a
             </span>
           ))}
         </div>
+      </section>
+
+      <section className="detail-block">
+        <h3>Fallbacks</h3>
+        <p>Total fallback turns: {analytics.fallbacks.total}</p>
+        <div className="chip-grid">
+          {Object.entries(analytics.fallbacks.byReason).map(([key, value]) => (
+            <span key={key} className="metric-chip">
+              {key}: {value}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <section className="detail-block">
+        <h3>Recent attempts</h3>
+        {progress.recentAttempts.length ? (
+          <div className="trend-table" role="table" aria-label="Recent attempts">
+            <div className="trend-row head" role="row">
+              <span role="columnheader">Time</span>
+              <span role="columnheader">Scenario</span>
+              <span role="columnheader">Score</span>
+            </div>
+            {progress.recentAttempts.map(attempt => (
+              <div key={`${attempt.scenarioId}-${attempt.at}-${attempt.score}`} className="trend-row" role="row">
+                <span role="cell">{formatAttemptDate(attempt.at)}</span>
+                <span role="cell">{attempt.scenarioId}</span>
+                <strong role="cell">
+                  {attempt.score} {attempt.cefrBand}
+                </strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No attempt trend yet.</p>
+        )}
       </section>
 
       <section className="detail-block">
@@ -136,11 +218,11 @@ function AnalyticsView({ panel }: { panel: Extract<InsightPanelState, { kind: "a
   );
 }
 
-export function InsightPanel({ panel, isLoading, onLoadFeedback, onLoadAnalytics, hasSession }: InsightPanelProps) {
+export function InsightPanel({ panel, isLoading, onLoadFeedback, onLoadAnalytics, canLoadFeedback }: InsightPanelProps) {
   return (
     <>
       <div className="panel-actions">
-        <button type="button" className="ghost-button" onClick={onLoadFeedback} disabled={!hasSession || isLoading}>
+        <button type="button" className="ghost-button" onClick={onLoadFeedback} disabled={!canLoadFeedback || isLoading}>
           Get Feedback
         </button>
         <button type="button" className="ghost-button" onClick={onLoadAnalytics} disabled={isLoading}>
