@@ -61,12 +61,18 @@ button {
 
 #root {
   min-height: 100vh;
+  min-height: 100svh;
 }
 
 .app-shell {
-  max-width: 1320px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100svh;
   margin: 0 auto;
-  padding: 18px 20px 36px;
+  padding: 18px clamp(14px, 2vw, 28px) 28px;
 }
 
 .app-header {
@@ -125,21 +131,12 @@ button {
   margin-bottom: 4px;
 }
 
-.objective-copy strong {
+.objective-copy span {
   display: block;
   overflow: hidden;
   color: var(--text);
   font-size: 1rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.objective-copy span {
-  display: block;
-  overflow: hidden;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: 0.9rem;
+  font-weight: 700;
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -271,15 +268,80 @@ button {
 }
 
 .workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
-  gap: 18px;
+  display: flex;
+  flex: 1;
+  min-height: 0;
   margin-top: 14px;
 }
 
-.stage-card,
-.insight-card {
+.stage-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-height: 540px;
   padding: 20px;
+}
+
+.setup-panel {
+  display: grid;
+  flex: 1;
+  align-content: end;
+  gap: 22px;
+}
+
+.setup-copy {
+  max-width: 760px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel-strong);
+}
+
+.setup-copy h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.setup-copy p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(220px, 1.4fr) minmax(140px, 0.8fr) minmax(180px, 0.9fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.completion-panel {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 18px;
+}
+
+.completion-panel > .primary-button {
+  justify-self: start;
+  min-width: 220px;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.1fr);
+  gap: 16px;
+}
+
+.report-grid .detail-block {
+  min-width: 0;
+}
+
+.report-empty {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
 }
 
 .card-header {
@@ -317,8 +379,9 @@ button {
 }
 
 .transcript {
+  flex: 1;
   min-height: 210px;
-  max-height: 42vh;
+  max-height: none;
   padding-right: 6px;
   overflow-y: auto;
 }
@@ -629,8 +692,9 @@ button {
 
 @media (max-width: 960px) {
   .app-header,
-  .workspace,
-  .control-bar {
+  .control-bar,
+  .setup-grid,
+  .report-grid {
     grid-template-columns: 1fr;
   }
 
@@ -641,11 +705,25 @@ button {
 
 @media (max-width: 640px) {
   .app-shell {
-    padding: 14px 14px 30px;
+    padding: 12px 14px 28px;
+  }
+
+  .app-header {
+    gap: 10px;
+  }
+
+  .brand-lockup {
+    padding: 0;
   }
 
   .brand-lockup h1 {
-    font-size: 1.7rem;
+    font-size: 1.62rem;
+  }
+
+  .eyebrow,
+  .panel-kicker {
+    margin-bottom: 7px;
+    font-size: 0.68rem;
   }
 
   .stage-card,
@@ -656,14 +734,52 @@ button {
     border-radius: 22px;
   }
 
+  .stage-card {
+    min-height: auto;
+  }
+
   .objective-strip {
     grid-template-columns: 1fr;
     gap: 10px;
+    min-height: 0;
   }
 
-  .objective-copy strong,
+  .status-pill {
+    width: 100%;
+    min-height: 38px;
+  }
+
   .objective-copy span {
     white-space: normal;
+  }
+
+  .workspace {
+    margin-top: 10px;
+  }
+
+  .setup-panel {
+    gap: 14px;
+  }
+
+  .setup-copy {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .setup-copy h3 {
+    font-size: 1.2rem;
+  }
+
+  .setup-grid {
+    gap: 12px;
+  }
+
+  .field select,
+  .primary-button,
+  .ghost-button {
+    min-height: 48px;
+    border-radius: 16px;
   }
 
   .panel-actions,

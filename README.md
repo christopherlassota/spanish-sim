@@ -11,6 +11,7 @@ Text-first MVP for scenario-based Spanish roleplay.
 - Persistent user-scoped progress store (`data/progress.json`) with retry delta tracking
 - Separate `client/` React + TypeScript frontend and `server/` Node API
 - Built frontend assets are served by the Node app after Vite build
+- Single-panel flow: setup options, live chat, then completed-session report in the same workspace
 
 ## Install
 ```bash
@@ -83,7 +84,7 @@ Set env vars before running:
   - response includes scenario summaries, recent attempt trend data, weakest competency, and recent score delta
 
 ## Frontend structure
-- `client/src/App.tsx`: app shell, state, session lifecycle, panel loading
+- `client/src/App.tsx`: app shell, state, single-panel setup/chat/report lifecycle
 - `client/src/api.ts`: typed browser API helpers
 - `client/src/ui-types.ts`: UI-only state types that compose shared API contracts
 - `client/src/components/Transcript.tsx`: conversation transcript rendering
